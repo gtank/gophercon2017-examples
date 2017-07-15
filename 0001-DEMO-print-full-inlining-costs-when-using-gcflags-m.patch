@@ -1,0 +1,46 @@
+From 215de5ca1b79d0674dde1abeadbde99e59f466c6 Mon Sep 17 00:00:00 2001
+From: George Tankersley <george.tankersley@gmail.com>
+Date: Fri, 14 Jul 2017 22:05:30 -0700
+Subject: [PATCH] DEMO: print full inlining costs when using gcflags -m
+
+---
+ src/cmd/compile/internal/gc/inl.go | 16 +++++++++++-----
+ 1 file changed, 11 insertions(+), 5 deletions(-)
+
+diff --git a/src/cmd/compile/internal/gc/inl.go b/src/cmd/compile/internal/gc/inl.go
+index dfa13e3c3b..7cb047e124 100644
+--- a/src/cmd/compile/internal/gc/inl.go
++++ b/src/cmd/compile/internal/gc/inl.go
+@@ -152,7 +152,13 @@ func caninl(fn *Node) {
+ 
+ 	const maxBudget = 80
+ 	visitor := hairyVisitor{budget: maxBudget}
+-	if visitor.visitList(fn.Nbody) {
++	result := visitor.visitList(fn.Nbody)
++
++	if Debug['m'] != 0 {
++		fmt.Printf("[inl] func %s costs %d\n", fn.Func.Nname.Sym.Name, maxBudget-visitor.budget)
++	}
++
++	if result {
+ 		reason = visitor.reason
+ 		return
+ 	}
+@@ -293,10 +299,10 @@ func (v *hairyVisitor) visit(n *Node) bool {
+ 		v.budget -= 2
+ 	}
+ 
+-	if v.budget < 0 {
+-		v.reason = "function too complex"
+-		return true
+-	}
++	// if v.budget < 0 {
++	// 	v.reason = "function too complex"
++	// 	return true
++	// }
+ 
+ 	return v.visit(n.Left) || v.visit(n.Right) ||
+ 		v.visitList(n.List) || v.visitList(n.Rlist) ||
+-- 
+2.11.0
+
